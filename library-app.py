@@ -574,7 +574,6 @@ if __name__ == "__main__":
                                 except ValueError:
                                     print("ID użytkownika nieprawidłowe.")
                             input("Naciśnij Enter, aby kontynuować...")
-
                         elif user_action == "8":
                             break
                         elif user_action.lower() == "esc":
