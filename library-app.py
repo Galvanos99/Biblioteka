@@ -222,48 +222,57 @@ def count_user_borrowed_books(user_id):
 
 # FUNKCJE DOT. KSIĄŻEK
 def borrow_book(user, book_id):
-    try:
-        book_id = int(book_id)
-        book = session.query(Book).filter_by(id=book_id).first()
-        if book:
-            if book.user_id is None:
-                book.user_id = user.id
-                session.add(Transaction(book_id=book.id, user_id=user.id))
-                session.commit()
-                print("Wypożyczono książkę.")
+    if user.blocked == True:
+        print("Twoje konto jest zablokowane, nie możesz korzystać w pełni z biblioteki.")
+    else:
+        try:
+            book_id = int(book_id)
+            book = session.query(Book).filter_by(id=book_id).first()
+            if book:
+                if book.user_id is None:
+                    book.user_id = user.id
+                    session.add(Transaction(book_id=book.id, user_id=user.id))
+                    session.commit()
+                    print("Wypożyczono książkę.")
+                else:
+                    print("Książka jest już wypożyczona.")
             else:
-                print("Książka jest już wypożyczona.")
-        else:
-            print("Książka o podanym ID nie istnieje.")
-    except ValueError:
-        print("Podano nieprawidłowe ID książki.")
+                print("Książka o podanym ID nie istnieje.")
+        except ValueError:
+            print("Podano nieprawidłowe ID książki.")
 
 # Funkcja do oddawania książki
 def return_book(user, book_id):
-    try:
-        book_id = int(book_id)
-        book = session.query(Book).filter_by(id=book_id, user_id=user.id).first()
-        if book:
-            book.user_id = None
-            session.query(Transaction).filter_by(book_id=book_id, user_id=user.id, returned_at=None).update({"returned_at": func.now()})
-            session.commit()
-            print("Oddano książkę.")
-        else:
-            print("Nie możesz zwrócić tej książki.")
-    except ValueError:
-        print("Podano nieprawidłowe ID książki.")
+    if user.blocked == True:
+        print("Twoje konto jest zablokowane, nie możesz korzystać w pełni z biblioteki.")
+    else:
+        try:
+            book_id = int(book_id)
+            book = session.query(Book).filter_by(id=book_id, user_id=user.id).first()
+            if book:
+                book.user_id = None
+                session.query(Transaction).filter_by(book_id=book_id, user_id=user.id, returned_at=None).update({"returned_at": func.now()})
+                session.commit()
+                print("Oddano książkę.")
+            else:
+                print("Nie możesz zwrócić tej książki.")
+        except ValueError:
+            print("Podano nieprawidłowe ID książki.")
 
 # Funkcja do wyświetlania wszystkich dostępnych książek
 def display_available_books():
-    books = session.query(Book).filter_by(user_id=None).all()
-    if books:
-        book_data = []
-        for book in books:
-            book_data.append([book.id, book.title, book.author, book.year])
-        headers = ["ID", "Tytuł", "Autor", "Rok"]
-        print(tabulate(book_data, headers=headers, tablefmt="grid"))
+    if user.blocked == True:
+        print("Twoje konto jest zablokowane, nie możesz korzystać w pełni z biblioteki.")
     else:
-        print("Nie masz dostępnych książek.")
+        books = session.query(Book).filter_by(user_id=None).all()
+        if books:
+            book_data = []
+            for book in books:
+                book_data.append([book.id, book.title, book.author, book.year])
+            headers = ["ID", "Tytuł", "Autor", "Rok"]
+            print(tabulate(book_data, headers=headers, tablefmt="grid"))
+        else:
+            print("Nie masz dostępnych książek.")
 
 def display_all_books():
     books = session.query(Book).all()
@@ -364,6 +373,7 @@ if __name__ == "__main__":
         # Menu admina po zalogowaniu
         while True:
             if (user.activated == False):
+                clear_terminal()
                 input("Twoje konto zostało dezaktywowane, skontaktuj się z administratorem.")
                 break  # Wylogowanie użytkownika w przypadku zablokowania konta
 
@@ -409,46 +419,70 @@ if __name__ == "__main__":
                             if user_id.lower() == "esc":
                                 print("Anulowano.")
                             else:
-                                user_id = int(user_id)
-                                user_to_edit = session.query(User).filter_by(id=user_id).first()
-                                if user_to_edit:
-                                    print("Dostępne opcje edycji:")
-                                    print("1. Zmiana nazwy użytkownika")
-                                    print("2. Zmiana hasła")
-                                    print("3. Zmiana imienia")
-                                    print("4. Zmiana nazwiska")
-                                    print("5. Zmiana statusu administratora")
-                                    option = input("Wybierz opcję: ")
-                                    if option == "1":
-                                        new_username = input("Nowa nazwa użytkownika: ")
-                                        edit_user_data(user_to_edit, username=new_username)
-                                    elif option == "2":
-                                        new_password = getpass("Nowe hasło: ")
-                                        password_hash = bcrypt.hashpw(new_password.encode('utf-8'),
-                                                                     bcrypt.gensalt())
-                                        user_to_edit.password_hash = password_hash
-                                        session.commit()
-                                        print("Hasło zostało pomyślnie zmienione.")
-                                    elif option == "3":
-                                        new_name = input("Nowe imię: ")
-                                        edit_user_data(user_to_edit, name=new_name)
-                                    elif option == "4":
-                                        new_surname = input("Nowe nazwisko: ")
-                                        edit_user_data(user_to_edit, surname=new_surname)
-                                    elif option == "5":
-                                        while True:
-                                            new_admin_status = input(
-                                                "Czy użytkownik ma być administratorem? (T/N): ").strip().lower()
-                                            if new_admin_status in ["t", "n"]:
-                                                is_admin = new_admin_status == "t"
-                                                edit_user_data(user_to_edit, is_admin=is_admin)
-                                                break
-                                            else:
-                                                print("Nieprawidłowa wartość. Podaj T/N.")
+
+                                try:
+                                    user_id = int(user_id)
+                                    user_to_edit = session.query(User).filter_by(id=user_id).first()
+
+
+                                    # Dane użytkownika w formie listy
+                                    user_data = [
+                                        [user_to_edit.id, user_to_edit.username, user_to_edit.name,
+                                         user_to_edit.surname,
+                                         "Tak" if user_to_edit.is_admin else "Nie",
+                                         "Tak" if user_to_edit.activated else "Nie",
+                                         "Tak" if user_to_edit.blocked else "Nie"]
+                                    ]
+
+                                    # Nagłówki kolumn
+                                    headers = ["ID", "Nazwa użytkownika", "Imię", "Nazwisko", "Administrator",
+                                               "Aktywowany", "Zablokowany"]
+
+                                    # Wyświetlenie tabeli
+                                    print(tabulate(user_data, headers=headers, tablefmt="grid"))
+
+
+                                    if user_to_edit:
+                                        print("Dostępne opcje edycji:")
+                                        print("1. Zmiana nazwy użytkownika")
+                                        print("2. Zmiana hasła")
+                                        print("3. Zmiana imienia")
+                                        print("4. Zmiana nazwiska")
+                                        print("5. Zmiana statusu administratora")
+
+                                        option = input("Wybierz opcję: ")
+                                        if option == "1":
+                                            new_username = input("Nowa nazwa użytkownika: ")
+                                            edit_user_data(user_to_edit, username=new_username)
+                                        elif option == "2":
+                                            new_password = getpass("Nowe hasło: ")
+                                            password_hash = bcrypt.hashpw(new_password.encode('utf-8'),
+                                                                         bcrypt.gensalt())
+                                            user_to_edit.password_hash = password_hash
+                                            session.commit()
+                                            print("Hasło zostało pomyślnie zmienione.")
+                                        elif option == "3":
+                                            new_name = input("Nowe imię: ")
+                                            edit_user_data(user_to_edit, name=new_name)
+                                        elif option == "4":
+                                            new_surname = input("Nowe nazwisko: ")
+                                            edit_user_data(user_to_edit, surname=new_surname)
+                                        elif option == "5":
+                                            while True:
+                                                new_admin_status = input(
+                                                    "Czy użytkownik ma być administratorem? (T/N): ").strip().lower()
+                                                if new_admin_status in ["t", "n"]:
+                                                    is_admin = new_admin_status == "t"
+                                                    edit_user_data(user_to_edit, is_admin=is_admin)
+                                                    break
+                                                else:
+                                                    print("Nieprawidłowa wartość. Podaj T/N.")
+                                        else:
+                                            print("Nieprawidłowa opcja.")
                                     else:
-                                        print("Nieprawidłowa opcja.")
-                                else:
-                                    print("Nie ma użytkownika o podanym ID.")
+                                        print("Nie ma użytkownika o podanym ID.")
+                                except ValueError:
+                                    print("ID użytkownika nieprawidłowe.")
                             input("Naciśnij Enter, aby kontynuować...")
                         elif user_action == "4":
                             clear_terminal()
@@ -609,6 +643,7 @@ if __name__ == "__main__":
             else:
                 clear_terminal()
                 if (user.activated == False):
+                    clear_terminal()
                     input("Twoje konto zostało dezaktywowane, skontaktuj się z administratorem.")
                     break  # Wylogowanie użytkownika w przypadku zablokowania konta
                 print(f"Witaj {user.name}!")
