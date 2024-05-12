@@ -5,3 +5,14 @@ Pomysły na polepszenie aplikacji:
     Dodać przy tworzeniu bazy pola imię, nazwisko w tabeli users - done
     Pomyśleć czy nie przerobić menu admina i użytkownika na funckje i podzielić je na podmenu
         (np. admin Zarządzanie książkami -> dodaj,usun,edytuj, Zarządzanie użytkownikami -> dodaj, usun, edytuj itp.)
+
+
+Co dalej:
+    Zarządanie/Przegląd transakcji
+    Zabezpieczenie operacji przed użytkownikiem (podaj int, a user poda str)
+    Przetestowanie wszystkich operacji
+    Dodanie testów funkcji
+
+Dodatkowe funkcje:
+    w menu usera informacja o tym kiedy musi oddać książkę - najbliższy termin
+
