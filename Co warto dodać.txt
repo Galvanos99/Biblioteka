@@ -1,7 +1,7 @@
 Pomysły na polepszenie aplikacji:
-    Sprawdzić na dministratorze czy działa: dodawania/usuwanie/edycja książek
-    Stworzyć ogólną funkcje do edycji danych użytkownika: imię, nazwisko
-    Dodać funkcje edycji danych do menu użytkownika i admina
-    Dodać przy tworzeniu bazy pola imię, nazwisko w tabeli users
+    Sprawdzić na dministratorze czy działa: dodawania/usuwanie/edycja książek - done
+    Stworzyć ogólną funkcje do edycji danych użytkownika: imię, nazwisko - done
+    Dodać funkcje edycji danych do menu użytkownika i admina - done
+    Dodać przy tworzeniu bazy pola imię, nazwisko w tabeli users - done
     Pomyśleć czy nie przerobić menu admina i użytkownika na funckje i podzielić je na podmenu
         (np. admin Zarządzanie książkami -> dodaj,usun,edytuj, Zarządzanie użytkownikami -> dodaj, usun, edytuj itp.)

@@ -1,0 +1,4 @@
+sqlalchemy
+bcrypt
+keyboard
+tabulate
