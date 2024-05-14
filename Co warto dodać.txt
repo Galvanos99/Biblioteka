@@ -4,22 +4,15 @@ Pomysły na polepszenie aplikacji:
     Dodać funkcje edycji danych do menu użytkownika i admina - done
     Dodać przy tworzeniu bazy pola imię, nazwisko w tabeli users - done
     Pomyśleć czy nie przerobić menu admina i użytkownika na funckje i podzielić je na podmenu
-        (np. admin Zarządzanie książkami -> dodaj,usun,edytuj, Zarządzanie użytkownikami -> dodaj, usun, edytuj itp.)
+        (np. admin Zarządzanie książkami -> dodaj,usun,edytuj, Zarządzanie użytkownikami -> dodaj, usun, edytuj itp.)   - done
 
 
 Co dalej:
-    Zarządanie/Przegląd transakcji
-    Zabezpieczenie operacji przed użytkownikiem (podaj int, a user poda str)
-    Przetestowanie wszystkich operacji
-    Dodanie testów funkcji
-    -system rezerwacji książek
-    -powiadomienia (np. że książka jest już dostępna, że admin udzielił lub nie wydłużenia czasu,
-     że knto zablokowane lub nie itp.)
-    -wyświetlanie rezerwacji i usuwanie ich
-    -dodanie domyślnego czasu wypożyczenia książki
-    -możliwość wysłania prośby do admina o przedłużenie
-    -dodanie funkcji adminowi do udzielenia/odrzucenia prośby o wydłużenie czasu wypożyczenia
+    Przegląd transakcji -  done
+    Zabezpieczenie operacji przed użytkownikiem (podaj int, a user poda str)  - ongoing
+    Przetestowanie wszystkich operacji - ongoing
+    -dodanie domyślnego czasu wypożyczenia książki  -   done
+    -możliwość wysłania prośby do admina o przedłużenie     ?
+    -dodanie funkcji adminowi do udzielenia/odrzucenia prośby o wydłużenie czasu wypożyczenia       ?
 
-Dodatkowe funkcje:
-    w menu usera informacja o tym kiedy musi oddać książkę - najbliższy termin
 

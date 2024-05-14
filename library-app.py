@@ -1,11 +1,11 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.sql import func
 from getpass import getpass
 import sys, os, bcrypt
 from tabulate import tabulate
-import keyboard
+from datetime import datetime, timedelta
 
 # Tworzymy instancję silnika bazy danych SQLite
 engine = create_engine('sqlite:///library.db', echo=False)
@@ -50,8 +50,9 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True)
     book_id = Column(Integer, ForeignKey('books.id'))
     user_id = Column(Integer, ForeignKey('users.id'))
-    borrowed_at = Column(String, default=func.now())
-    returned_at = Column(String)
+    borrowed_at = Column(DateTime, default=func.now())
+    due_date = Column(DateTime)
+    returned_at = Column(DateTime, nullable=True)
 
     book = relationship("Book")
     user = relationship("User")
@@ -195,13 +196,23 @@ def display_user_books(user_id):
         if user_books:
             book_data = []
             for book in user_books:
-                book_data.append([book.id, book.title, book.author, book.year])
-            headers = ["ID", "Tytuł", "Autor", "Rok"]
+                transaction = session.query(Transaction).filter_by(book_id=book.id, user_id=user.id, returned_at=None).first()
+                if transaction:
+                    borrowed_at = transaction.borrowed_at if isinstance(transaction.borrowed_at, datetime) else datetime.strptime(transaction.borrowed_at, "%Y-%m-%d %H:%M:%S.%f")
+                    due_date = transaction.due_date if isinstance(transaction.due_date, datetime) else datetime.strptime(transaction.due_date, "%Y-%m-%d %H:%M:%S.%f")
+                    days_left = (due_date - datetime.now()).days
+                    row = [book.id, book.title, book.author, book.year, borrowed_at.strftime("%Y-%m-%d"), due_date.strftime("%Y-%m-%d")]
+                    if days_left < 7:
+                        row = [f"\033[91m{col}\033[0m" for col in row]  # Kolorowanie na czerwono
+                    book_data.append(row)
+                    print("Dobiega koniec terminu wypożyczenia!")
+            headers = ["ID", "Tytuł", "Autor", "Rok", "Data wypożyczenia", "Termin zwrotu"]
             print(tabulate(book_data, headers=headers, tablefmt="grid"))
         else:
             print("Nie masz wypożyczonych książek.")
     else:
         print("Nie ma użytkownika o podanym ID.")
+
 
 def change_password(user_id, new_password):
     user = session.query(User).filter_by(id=user_id).first()
@@ -231,7 +242,8 @@ def borrow_book(user, book_id):
             if book:
                 if book.user_id is None:
                     book.user_id = user.id
-                    session.add(Transaction(book_id=book.id, user_id=user.id))
+                    due_date = (datetime.now() + timedelta(days=5)).replace(microsecond=0)
+                    session.add(Transaction(book_id=book.id, user_id=user.id, due_date=due_date))
                     session.commit()
                     print("Wypożyczono książkę.")
                 else:
@@ -251,7 +263,7 @@ def return_book(user, book_id):
             book = session.query(Book).filter_by(id=book_id, user_id=user.id).first()
             if book:
                 book.user_id = None
-                session.query(Transaction).filter_by(book_id=book_id, user_id=user.id, returned_at=None).update({"returned_at": func.now()})
+                session.query(Transaction).filter_by(book_id=book_id, user_id=user.id, returned_at=None).update({"returned_at": datetime.now()})
                 session.commit()
                 print("Oddano książkę.")
             else:
@@ -310,6 +322,32 @@ def edit_book(book_id, title=None, author=None, year=None, user_id=None):
     else:
         print("Nie ma książki o podanym ID.")
 
+def extend_borrow_period(book_id, extension_days):
+    book = session.query(Book).filter_by(id=book_id).first()
+    if book:
+        transaction = session.query(Transaction).filter_by(book_id=book.id, returned_at=None).first()
+        if transaction:
+            transaction.due_date += timedelta(days=extension_days)
+            session.commit()
+            print(f"Termin zwrotu książki '{book.title}' został przedłużony o {extension_days} dni.")
+        else:
+            print("Książka nie jest obecnie wypożyczona.")
+    else:
+        print("Książka o podanym ID nie istnieje.")
+
+def display_transactions():
+    transactions = session.query(Transaction).all()
+    if transactions:
+        transaction_data = []
+        for transaction in transactions:
+            user = session.query(User).filter_by(id=transaction.user_id).first()
+            username = user.username if user else "Unknown User"
+            book = session.query(Book).filter_by(id=transaction.book_id).first()
+            transaction_data.append([transaction.id, username, book.title, transaction.borrowed_at, transaction.due_date, "Returned" if transaction.returned_at else "Not Returned"])
+        headers = ["ID", "Użytkownik", "Tytuł książki", "Data wypożyczenia", "Termin zwrotu", "Status"]
+        print(tabulate(transaction_data, headers=headers, tablefmt="grid"))
+    else:
+        print("Brak transakcji w bazie danych.")
 
 # Przykładowe użycie
 if __name__ == "__main__":
@@ -381,7 +419,7 @@ if __name__ == "__main__":
                 clear_terminal()
                 print(f"Witaj {user.name}!")
                 action = input(
-                    "\nCo chcesz zrobić?\n1. Zarządzanie użytkownikami\n2. Zarządzanie książkami\n3. Zmień hasło\n4. Wyloguj\n5. (To-Do)Przeglądaj Transakcje\nWybierz opcję: ")
+                    "\nCo chcesz zrobić?\n1. Zarządzanie użytkownikami\n2. Zarządzanie książkami\n3. Zmień hasło\n4. Przeglądaj Transakcje\n5. Wyloguj\nWybierz opcję: ")
                 if action == "1":
                     while True:
                         clear_terminal()
@@ -586,7 +624,7 @@ if __name__ == "__main__":
                         clear_terminal()
                         print("--- ZARZĄDZANIE KSIĄŻKAMI --- 'esc' - exit ")
                         book_action = input(
-                            "\nCo chcesz zrobić?\n1. Wyświetl listę książek\n2. Dodaj książkę\n3. Edytuj książkę\n4. Szukaj książki\n5. Powrót\nWybierz opcję: ")
+                            "\nCo chcesz zrobić?\n1. Wyświetl listę książek\n2. Dodaj książkę\n3. Edytuj książkę\n4. Szukaj książki\n5. Wydłuż czas wypożyczenia\n6. Powrót\nWybierz opcję: ")
                         if book_action == "1":
                             clear_terminal()
                             print("--- WYŚWIETL LISTĘ KSIĄŻEK ---")
@@ -663,6 +701,17 @@ if __name__ == "__main__":
                             search_book(search_term)
                             input("Naciśnij Enter, aby kontynuować...")
                         elif book_action == "5":
+                            clear_terminal()
+                            print("--- PRZEDŁUŻENIE WYPOŻYCZENIA ---")
+                            try:
+                                bookid = input("Wprowadź ID książki: ")
+                                days=30
+                                extend_borrow_period(bookid,days)
+                            except ValueError:
+                                print("Podano nieprawidłową wartość!")
+                            input("Naciśnij Enter, aby kontynuować...")
+
+                        elif book_action == "6":
                             break
                         elif book_action == "esc":
                             break
@@ -680,6 +729,11 @@ if __name__ == "__main__":
                         print("Podane hasła nie zgadzają się.")
                     input("Naciśnij Enter, aby kontynuować...")
                 elif action == "4":
+                    clear_terminal()
+                    print("--- TRANSAKCJE ---")
+                    display_transactions()
+                    input("Naciśnij Enter, aby kontynuować...")
+                elif action == "5":
                     break
                 else:
                     print("Nieprawidłowy wybór.")
