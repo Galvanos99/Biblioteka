@@ -204,8 +204,8 @@ def display_user_books(user_id):
                     row = [book.id, book.title, book.author, book.year, borrowed_at.strftime("%Y-%m-%d"), due_date.strftime("%Y-%m-%d")]
                     if days_left < 7:
                         row = [f"\033[91m{col}\033[0m" for col in row]  # Kolorowanie na czerwono
+                        print("Dobiega koniec terminu wypożyczenia!")
                     book_data.append(row)
-                    print("Dobiega koniec terminu wypożyczenia!")
             headers = ["ID", "Tytuł", "Autor", "Rok", "Data wypożyczenia", "Termin zwrotu"]
             print(tabulate(book_data, headers=headers, tablefmt="grid"))
         else:
